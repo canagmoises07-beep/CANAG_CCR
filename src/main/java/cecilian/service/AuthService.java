@@ -1,7 +1,11 @@
+package cecilian.service;
 
-package cecilian;
+import cecilian.dao.UserDAO;
+import cecilian.dao.PasswordUtil;
+import cecilian.model.User;
 
 import java.sql.SQLException;
+
 
 public class AuthService {
 

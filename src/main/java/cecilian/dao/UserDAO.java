@@ -1,5 +1,6 @@
+package cecilian.dao;
 
-package cecilian;
+import cecilian.model.User;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -10,7 +11,6 @@ import java.sql.Types;
 public class UserDAO {
 
     // Save a new user account
-
     public boolean createUser(
             String schoolId,
             String fullName,

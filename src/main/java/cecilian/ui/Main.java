@@ -1,4 +1,6 @@
-package cecilian;
+package cecilian.ui;
+
+import cecilian.dao.DatabaseConnection;
 
 public class Main {
     public static void main(String[] args) {

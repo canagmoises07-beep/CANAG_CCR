@@ -1,4 +1,7 @@
-package cecilian;
+package cecilian.ui;
+
+import cecilian.model.User;
+import cecilian.service.AuthService;
 
 import java.util.Scanner;
 

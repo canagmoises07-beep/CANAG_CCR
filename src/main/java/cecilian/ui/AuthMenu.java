@@ -1,5 +1,7 @@
+package cecilian.ui;
 
-package cecilian;
+import cecilian.model.User;
+import cecilian.service.AuthService;
 
 import java.util.Scanner;
 
@@ -20,7 +22,6 @@ public class AuthMenu {
             System.out.print("Choose an option: ");
 
             String choice = scanner.nextLine();
-
 
             switch (choice) {
                 case "1":
@@ -89,7 +90,6 @@ public class AuthMenu {
         System.out.println(result);
     }
 
-
     private static void login() {
         System.out.println("\n--- LOGIN ---");
 
@@ -117,14 +117,43 @@ public class AuthMenu {
         } else if ("STUDENT".equalsIgnoreCase(user.role())) {
             StudentMenu.showMenu(user, authService);
         } else if ("TEACHER".equalsIgnoreCase(user.role())) {
-            System.out.println(
-                    "Department staff dashboard will be added next."
-            );
-            authService.logout(user);
-            System.out.println("You have been logged out.");
+            showTeacherMenu(user);
         } else {
             System.out.println("Unrecognized account role.");
             authService.logout(user);
+        }
+    }
+
+    private static void showTeacherMenu(User teacher) {
+        while (true) {
+            System.out.println("\n==================================");
+            System.out.println(" DEPARTMENT STAFF (TEACHER) DASHBOARD");
+            System.out.println("==================================");
+            System.out.println("Welcome, " + teacher.fullName() + "!");
+            System.out.println("1. View Department Clearance Requests");
+            System.out.println("2. Sign/Approve Clearance");
+            System.out.println("3. Logout");
+            System.out.print("Choose an option: ");
+
+            String choice = scanner.nextLine();
+
+            switch (choice) {
+                case "1":
+                    System.out.println("\nView clearance requests feature is coming next.");
+                    break;
+
+                case "2":
+                    System.out.println("\nSign/approve clearance feature is coming next.");
+                    break;
+
+                case "3":
+                    authService.logout(teacher);
+                    System.out.println("You have been logged out.");
+                    return;
+
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
         }
     }
 

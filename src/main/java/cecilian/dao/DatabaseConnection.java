@@ -1,4 +1,4 @@
-package cecilian;
+package cecilian.dao;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

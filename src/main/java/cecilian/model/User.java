@@ -1,5 +1,4 @@
-
-package cecilian;
+package cecilian.model;
 
 public record User(
         int userId,
