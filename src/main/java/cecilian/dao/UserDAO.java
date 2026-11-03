@@ -112,7 +112,6 @@ public class UserDAO {
         }
     }
 
-    // Returns a List<User> containing all registered accounts regardless of role
     public List<User> getAllUsers() throws SQLException {
         List<User> users = new ArrayList<>();
         String sql = "SELECT * FROM USERS_TBL ORDER BY user_id";
@@ -140,7 +139,6 @@ public class UserDAO {
         return users;
     }
 
-    // Returns a List<User> where status = 'PENDING' across all user role types
     public List<User> getPendingUsers() throws SQLException {
         List<User> users = new ArrayList<>();
         String sql = "SELECT * FROM USERS_TBL WHERE status = 'PENDING' ORDER BY user_id";
@@ -168,7 +166,6 @@ public class UserDAO {
         return users;
     }
 
-    // Updates a target user's account status from 'PENDING' to 'APPROVED'
     public boolean approveUser(int userId) throws SQLException {
         String sql = "UPDATE USERS_TBL SET status = 'APPROVED' WHERE user_id = ? AND status = 'PENDING'";
 
@@ -176,6 +173,20 @@ public class UserDAO {
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setInt(1, userId);
+            return statement.executeUpdate() > 0;
+        }
+    }
+
+    public boolean updateUserRoleAndStatus(int userId, String newRole, String newStatus) throws SQLException {
+        String sql = "UPDATE USERS_TBL SET role = ?, status = ? WHERE user_id = ?";
+
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, newRole.toUpperCase());
+            statement.setString(2, newStatus.toUpperCase());
+            statement.setInt(3, userId);
+
             return statement.executeUpdate() > 0;
         }
     }
