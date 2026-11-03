@@ -7,9 +7,7 @@ import java.util.Scanner;
 
 public class StudentMenu {
 
-    private static final Scanner scanner = new Scanner(System.in);
-
-    public static void showMenu(User student, AuthService authService) {
+    public static void showMenu(User student, AuthService authService, Scanner scanner) {
         while (true) {
             System.out.println("\n==================================");
             System.out.println(" STUDENT DASHBOARD");
@@ -24,15 +22,11 @@ public class StudentMenu {
 
             switch (choice) {
                 case "1":
-                    System.out.println(
-                            "\nClearance status feature is coming next."
-                    );
+                    System.out.println("\nClearance status feature is coming next.");
                     break;
 
                 case "2":
-                    System.out.println(
-                            "\nClearance request feature is coming next."
-                    );
+                    System.out.println("\nClearance request feature is coming next.");
                     break;
 
                 case "3":
@@ -41,9 +35,7 @@ public class StudentMenu {
                     return;
 
                 default:
-                    System.out.println(
-                            "Invalid choice. Please try again."
-                    );
+                    System.out.println("Invalid choice. Please try again.");
             }
         }
     }

@@ -1,16 +1,24 @@
 package cecilian.ui;
 
+import cecilian.dao.UserDAO;
 import cecilian.model.User;
 import cecilian.service.AuthService;
 
 import java.util.Scanner;
 
-public class AuthMenu {
+public class Authentication {
 
-    private static final Scanner scanner = new Scanner(System.in);
-    private static final AuthService authService = new AuthService();
+    private final UserDAO userDAO;
+    private final Scanner scanner;
+    private final AuthService authService;
 
-    public static void showMenu() {
+    public Authentication(UserDAO userDAO, Scanner scanner) {
+        this.userDAO = userDAO;
+        this.scanner = scanner;
+        this.authService = new AuthService(userDAO);
+    }
+
+    public void start() {
         while (true) {
             System.out.println("\n==================================");
             System.out.println(" CECILIANS CLEARANCE SYSTEM");
@@ -42,10 +50,10 @@ public class AuthMenu {
         }
     }
 
-    private static void registerAccount() {
+    private void registerAccount() {
         System.out.println("\n--- ACCOUNT REGISTRATION ---");
         System.out.println("1. Student");
-        System.out.println("2. Department Staff (Teacher)");
+        System.out.println("2. Teacher / Department Staff");
         System.out.print("Select account type: ");
 
         String roleChoice = scanner.nextLine();
@@ -79,18 +87,13 @@ public class AuthMenu {
         String confirmPassword = scanner.nextLine();
 
         String result = authService.registerAccount(
-                schoolId,
-                fullName,
-                username,
-                password,
-                confirmPassword,
-                role
+                schoolId, fullName, username, password, confirmPassword, role
         );
 
         System.out.println(result);
     }
 
-    private static void login() {
+    private void login() {
         System.out.println("\n--- LOGIN ---");
 
         System.out.print("Username: ");
@@ -102,9 +105,7 @@ public class AuthMenu {
         User user = authService.login(username, password);
 
         if (user == null) {
-            System.out.println(
-                    "Login failed. Check your credentials or account status."
-            );
+            System.out.println("Login failed. Check your credentials or account status.");
             return;
         }
 
@@ -112,52 +113,24 @@ public class AuthMenu {
         System.out.println("Welcome, " + user.fullName() + "!");
         System.out.println("Role: " + user.role());
 
-        if ("ADMIN".equalsIgnoreCase(user.role())) {
-            showAdminMenu(user);
-        } else if ("STUDENT".equalsIgnoreCase(user.role())) {
-            StudentMenu.showMenu(user, authService);
-        } else if ("TEACHER".equalsIgnoreCase(user.role())) {
-            showTeacherMenu(user);
-        } else {
-            System.out.println("Unrecognized account role.");
-            authService.logout(user);
+        String role = user.role().toUpperCase();
+        switch (role) {
+            case "ADMIN":
+                showAdminMenu(user);
+                break;
+            case "STUDENT":
+                StudentMenu.showMenu(user, authService, scanner);
+                break;
+            case "TEACHER":
+                showTeacherMenu(user);
+                break;
+            default:
+                System.out.println("Unrecognized account role.");
+                authService.logout(user);
         }
     }
 
-    private static void showTeacherMenu(User teacher) {
-        while (true) {
-            System.out.println("\n==================================");
-            System.out.println(" DEPARTMENT STAFF (TEACHER) DASHBOARD");
-            System.out.println("==================================");
-            System.out.println("Welcome, " + teacher.fullName() + "!");
-            System.out.println("1. View Department Clearance Requests");
-            System.out.println("2. Sign/Approve Clearance");
-            System.out.println("3. Logout");
-            System.out.print("Choose an option: ");
-
-            String choice = scanner.nextLine();
-
-            switch (choice) {
-                case "1":
-                    System.out.println("\nView clearance requests feature is coming next.");
-                    break;
-
-                case "2":
-                    System.out.println("\nSign/approve clearance feature is coming next.");
-                    break;
-
-                case "3":
-                    authService.logout(teacher);
-                    System.out.println("You have been logged out.");
-                    return;
-
-                default:
-                    System.out.println("Invalid choice. Please try again.");
-            }
-        }
-    }
-
-    private static void setupInitialAdmin() {
+    private void setupInitialAdmin() {
         System.out.println("\n--- INITIAL ADMIN SETUP ---");
 
         System.out.print("School ID: ");
@@ -176,17 +149,13 @@ public class AuthMenu {
         String confirmPassword = scanner.nextLine();
 
         String result = authService.setupInitialAdmin(
-                schoolId,
-                fullName,
-                username,
-                password,
-                confirmPassword
+                schoolId, fullName, username, password, confirmPassword
         );
 
         System.out.println(result);
     }
 
-    private static void showAdminMenu(User admin) {
+    private void showAdminMenu(User admin) {
         while (true) {
             System.out.println("\n==================================");
             System.out.println(" ADMINISTRATOR DASHBOARD");
@@ -202,25 +171,21 @@ public class AuthMenu {
                 case "1":
                     viewPendingAccounts();
                     break;
-
                 case "2":
                     approveAccount(admin);
                     break;
-
                 case "3":
                     authService.logout(admin);
                     System.out.println("You have been logged out.");
                     return;
-
                 default:
                     System.out.println("Invalid choice. Please try again.");
             }
         }
     }
 
-    private static void viewPendingAccounts() {
+    private void viewPendingAccounts() {
         java.util.List<User> users = authService.getPendingUsers();
-
         System.out.println("\n--- PENDING ACCOUNTS ---");
 
         if (users.isEmpty()) {
@@ -239,7 +204,7 @@ public class AuthMenu {
         }
     }
 
-    private static void approveAccount(User admin) {
+    private void approveAccount(User admin) {
         viewPendingAccounts();
 
         System.out.print("\nEnter the User ID to approve (0 to cancel): ");
@@ -258,13 +223,41 @@ public class AuthMenu {
             if (approved) {
                 System.out.println("Account approved successfully!");
             } else {
-                System.out.println(
-                        "Approval failed. Check the User ID and account status."
-                );
+                System.out.println("Approval failed. Check the User ID and account status.");
             }
 
         } catch (NumberFormatException e) {
             System.out.println("Invalid User ID. Please enter a number.");
+        }
+    }
+
+    private void showTeacherMenu(User teacher) {
+        while (true) {
+            System.out.println("\n==================================");
+            System.out.println(" DEPARTMENT STAFF (TEACHER) DASHBOARD");
+            System.out.println("==================================");
+            System.out.println("Welcome, " + teacher.fullName() + "!");
+            System.out.println("1. View Department Clearance Requests");
+            System.out.println("2. Sign/Approve Clearance");
+            System.out.println("3. Logout");
+            System.out.print("Choose an option: ");
+
+            String choice = scanner.nextLine();
+
+            switch (choice) {
+                case "1":
+                    System.out.println("\nView clearance requests feature is coming next.");
+                    break;
+                case "2":
+                    System.out.println("\nSign/approve clearance feature is coming next.");
+                    break;
+                case "3":
+                    authService.logout(teacher);
+                    System.out.println("You have been logged out.");
+                    return;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
         }
     }
 }

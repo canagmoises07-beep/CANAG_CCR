@@ -6,12 +6,18 @@ import cecilian.model.User;
 
 import java.sql.SQLException;
 
-
 public class AuthService {
 
-    private final UserDAO userDAO = new UserDAO();
+    private final UserDAO userDAO;
 
-    // Register a student or department staff account
+    public AuthService(UserDAO userDAO) {
+        this.userDAO = userDAO;
+    }
+
+    public AuthService() {
+        this.userDAO = new UserDAO();
+    }
+
     public String registerAccount(
             String schoolId,
             String fullName,
@@ -86,9 +92,7 @@ public class AuthService {
         return "Registration failed. Please try again.";
     }
 
-    // Log in an active account
     public User login(String username, String password) {
-
         try {
             User user = userDAO.findByUsername(username.trim());
 
@@ -128,9 +132,7 @@ public class AuthService {
         }
     }
 
-    // Record logout activity
     public void logout(User user) {
-
         if (user == null) {
             return;
         }
@@ -211,8 +213,7 @@ public class AuthService {
         try {
             return userDAO.findPendingUsers();
         } catch (Exception e) {
-            System.out.println("Error loading pending accounts: "
-                    + e.getMessage());
+            System.out.println("Error loading pending accounts: " + e.getMessage());
             return new java.util.ArrayList<>();
         }
     }
@@ -237,8 +238,7 @@ public class AuthService {
             return approved;
 
         } catch (Exception e) {
-            System.out.println("Error approving account: "
-                    + e.getMessage());
+            System.out.println("Error approving account: " + e.getMessage());
             return false;
         }
     }
