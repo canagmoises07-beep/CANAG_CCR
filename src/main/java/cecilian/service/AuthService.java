@@ -100,7 +100,7 @@ public class AuthService {
                 return null;
             }
 
-            if (!"ACTIVE".equalsIgnoreCase(user.status())) {
+            if (!"ACTIVE".equalsIgnoreCase(user.status()) && !"APPROVED".equalsIgnoreCase(user.status())) {
                 return null;
             }
 
@@ -211,7 +211,7 @@ public class AuthService {
 
     public java.util.List<User> getPendingUsers() {
         try {
-            return userDAO.findPendingUsers();
+            return userDAO.getPendingUsers();
         } catch (Exception e) {
             System.out.println("Error loading pending accounts: " + e.getMessage());
             return new java.util.ArrayList<>();
@@ -219,8 +219,7 @@ public class AuthService {
     }
 
     public boolean approveAccount(int userId, User admin) {
-        if (admin == null || !"ADMIN".equalsIgnoreCase(admin.role())
-                || !"ACTIVE".equalsIgnoreCase(admin.status())) {
+        if (admin == null || !"ADMIN".equalsIgnoreCase(admin.role())) {
             return false;
         }
 

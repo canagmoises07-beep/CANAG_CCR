@@ -7,10 +7,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.ArrayList;
+import java.util.List;
 
 public class UserDAO {
 
-    // Save a new user account
     public boolean createUser(
             String schoolId,
             String fullName,
@@ -37,13 +38,8 @@ public class UserDAO {
         }
     }
 
-    // Find a user by username
     public User findByUsername(String username) throws SQLException {
-
-        String sql = """
-                SELECT * FROM USERS_TBL
-                WHERE username = ?
-                """;
+        String sql = "SELECT * FROM USERS_TBL WHERE username = ?";
 
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -52,13 +48,8 @@ public class UserDAO {
 
             try (ResultSet result = statement.executeQuery()) {
                 if (result.next()) {
-
-                    Object departmentValue =
-                            result.getObject("department_id");
-
-                    Integer departmentId = departmentValue == null
-                            ? null
-                            : ((Number) departmentValue).intValue();
+                    Object departmentValue = result.getObject("department_id");
+                    Integer departmentId = departmentValue == null ? null : ((Number) departmentValue).intValue();
 
                     return new User(
                             result.getInt("user_id"),
@@ -73,21 +64,11 @@ public class UserDAO {
                 }
             }
         }
-
         return null;
     }
 
-    // Record an action in the audit log
-    public void logAction(
-            Integer userId,
-            String action,
-            String description) throws SQLException {
-
-        String sql = """
-                INSERT INTO AUDIT_LOGS
-                (user_id, action, description)
-                VALUES (?, ?, ?)
-                """;
+    public void logAction(Integer userId, String action, String description) throws SQLException {
+        String sql = "INSERT INTO AUDIT_LOGS (user_id, action, description) VALUES (?, ?, ?)";
 
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -100,7 +81,6 @@ public class UserDAO {
 
             statement.setString(2, action);
             statement.setString(3, description);
-
             statement.executeUpdate();
         }
     }
@@ -132,26 +112,18 @@ public class UserDAO {
         }
     }
 
-    public java.util.List<User> findPendingUsers() throws SQLException {
-        java.util.List<User> users = new java.util.ArrayList<>();
-
-        String sql = """
-            SELECT * FROM USERS_TBL
-            WHERE status = 'PENDING'
-            ORDER BY user_id
-            """;
+    // Returns a List<User> containing all registered accounts regardless of role
+    public List<User> getAllUsers() throws SQLException {
+        List<User> users = new ArrayList<>();
+        String sql = "SELECT * FROM USERS_TBL ORDER BY user_id";
 
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql);
              ResultSet result = statement.executeQuery()) {
 
             while (result.next()) {
-                Object departmentValue =
-                        result.getObject("department_id");
-
-                Integer departmentId = departmentValue == null
-                        ? null
-                        : ((Number) departmentValue).intValue();
+                Object departmentValue = result.getObject("department_id");
+                Integer departmentId = departmentValue == null ? null : ((Number) departmentValue).intValue();
 
                 users.add(new User(
                         result.getInt("user_id"),
@@ -165,24 +137,45 @@ public class UserDAO {
                 ));
             }
         }
-
         return users;
     }
 
+    // Returns a List<User> where status = 'PENDING' across all user role types
+    public List<User> getPendingUsers() throws SQLException {
+        List<User> users = new ArrayList<>();
+        String sql = "SELECT * FROM USERS_TBL WHERE status = 'PENDING' ORDER BY user_id";
+
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet result = statement.executeQuery()) {
+
+            while (result.next()) {
+                Object departmentValue = result.getObject("department_id");
+                Integer departmentId = departmentValue == null ? null : ((Number) departmentValue).intValue();
+
+                users.add(new User(
+                        result.getInt("user_id"),
+                        result.getString("school_id"),
+                        result.getString("full_name"),
+                        result.getString("username"),
+                        result.getString("password_hash"),
+                        result.getString("role"),
+                        departmentId,
+                        result.getString("status")
+                ));
+            }
+        }
+        return users;
+    }
+
+    // Updates a target user's account status from 'PENDING' to 'APPROVED'
     public boolean approveUser(int userId) throws SQLException {
-        String sql = """
-            UPDATE USERS_TBL
-            SET status = 'ACTIVE'
-            WHERE user_id = ?
-            AND status = 'PENDING'
-            AND role IN ('STUDENT', 'TEACHER')
-            """;
+        String sql = "UPDATE USERS_TBL SET status = 'APPROVED' WHERE user_id = ? AND status = 'PENDING'";
 
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setInt(1, userId);
-
             return statement.executeUpdate() > 0;
         }
     }

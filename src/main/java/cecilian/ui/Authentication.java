@@ -116,7 +116,7 @@ public class Authentication {
         String role = user.role().toUpperCase();
         switch (role) {
             case "ADMIN":
-                showAdminMenu(user);
+                AdminMenu.showMenu(user, userDAO, authService, scanner);
                 break;
             case "STUDENT":
                 StudentMenu.showMenu(user, authService, scanner);
@@ -153,82 +153,6 @@ public class Authentication {
         );
 
         System.out.println(result);
-    }
-
-    private void showAdminMenu(User admin) {
-        while (true) {
-            System.out.println("\n==================================");
-            System.out.println(" ADMINISTRATOR DASHBOARD");
-            System.out.println("==================================");
-            System.out.println("1. View Pending Accounts");
-            System.out.println("2. Approve Account");
-            System.out.println("3. Logout");
-            System.out.print("Choose an option: ");
-
-            String choice = scanner.nextLine();
-
-            switch (choice) {
-                case "1":
-                    viewPendingAccounts();
-                    break;
-                case "2":
-                    approveAccount(admin);
-                    break;
-                case "3":
-                    authService.logout(admin);
-                    System.out.println("You have been logged out.");
-                    return;
-                default:
-                    System.out.println("Invalid choice. Please try again.");
-            }
-        }
-    }
-
-    private void viewPendingAccounts() {
-        java.util.List<User> users = authService.getPendingUsers();
-        System.out.println("\n--- PENDING ACCOUNTS ---");
-
-        if (users.isEmpty()) {
-            System.out.println("No pending accounts found.");
-            return;
-        }
-
-        for (User user : users) {
-            System.out.println(
-                    "ID: " + user.userId()
-                            + " | Name: " + user.fullName()
-                            + " | Username: " + user.username()
-                            + " | Role: " + user.role()
-                            + " | Status: " + user.status()
-            );
-        }
-    }
-
-    private void approveAccount(User admin) {
-        viewPendingAccounts();
-
-        System.out.print("\nEnter the User ID to approve (0 to cancel): ");
-        String input = scanner.nextLine();
-
-        try {
-            int userId = Integer.parseInt(input);
-
-            if (userId == 0) {
-                System.out.println("Approval cancelled.");
-                return;
-            }
-
-            boolean approved = authService.approveAccount(userId, admin);
-
-            if (approved) {
-                System.out.println("Account approved successfully!");
-            } else {
-                System.out.println("Approval failed. Check the User ID and account status.");
-            }
-
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid User ID. Please enter a number.");
-        }
     }
 
     private void showTeacherMenu(User teacher) {
