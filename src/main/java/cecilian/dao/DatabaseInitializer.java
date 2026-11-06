@@ -7,6 +7,7 @@ import java.sql.Statement;
 public class DatabaseInitializer {
 
     public static void initializeDatabase() {
+
         String usersTable = """
                 CREATE TABLE IF NOT EXISTS USERS_TBL (
                     user_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -27,21 +28,42 @@ public class DatabaseInitializer {
                     action TEXT NOT NULL,
                     description TEXT,
                     timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (user_id) REFERENCES USERS_TBL(user_id)
+                    FOREIGN KEY (user_id)
+                        REFERENCES USERS_TBL(user_id)
                 )
                 """;
 
-        try (Connection connection = DatabaseConnection.getConnection();
+        // NEW ACTIVITY LOGS TABLE
+        String activityLogsTable = """
+                CREATE TABLE IF NOT EXISTS activity_logs (
+                    log_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    action_type TEXT NOT NULL,
+                    description TEXT,
+                    timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id)
+                        REFERENCES USERS_TBL(user_id)
+                )
+                """;
+
+        try (Connection connection =
+                     DatabaseConnection.getConnection();
              Statement statement = connection.createStatement()) {
 
             statement.execute(usersTable);
             statement.execute(auditTable);
+            statement.execute(activityLogsTable);
 
             System.out.println("SQLite database connected!");
             System.out.println("Database tables initialized.");
+            System.out.println("Activity logs table initialized!");
 
         } catch (SQLException e) {
-            System.out.println("Database error during initialization: " + e.getMessage());
+
+            System.out.println(
+                    "Database error during initialization: "
+                            + e.getMessage()
+            );
         }
     }
 }

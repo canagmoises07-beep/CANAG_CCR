@@ -1,23 +1,40 @@
+
 package cecilian.service;
 
 import cecilian.dao.UserDAO;
 import cecilian.dao.PasswordUtil;
+import cecilian.dao.ActivityLogDAO;
 import cecilian.model.User;
 
 import java.sql.SQLException;
+import java.util.List;
+import java.util.ArrayList;
 
 public class AuthService {
 
     private final UserDAO userDAO;
+    private final ActivityLogDAO activityLogDao;
 
     public AuthService(UserDAO userDAO) {
         this.userDAO = userDAO;
+        this.activityLogDao = new ActivityLogDAO();
     }
 
     public AuthService() {
         this.userDAO = new UserDAO();
+        this.activityLogDao = new ActivityLogDAO();
     }
 
+    // Centralized Activity Logging
+    private void logActivity(int userId, String actionType, String description) {
+        try {
+            activityLogDao.logAction(userId, actionType, description);
+        } catch (SQLException e) {
+            System.out.println("Activity logging error: " + e.getMessage());
+        }
+    }
+
+    // ACCOUNT REGISTRATION
     public String registerAccount(
             String schoolId,
             String fullName,
@@ -67,9 +84,9 @@ public class AuthService {
                 User user = userDAO.findByUsername(username);
 
                 if (user != null) {
-                    userDAO.logAction(
+                    logActivity(
                             user.userId(),
-                            "REGISTRATION",
+                            "USER_REGISTERED",
                             role + " account registered with PENDING status."
                     );
                 }
@@ -92,6 +109,7 @@ public class AuthService {
         return "Registration failed. Please try again.";
     }
 
+    // USER LOGIN
     public User login(String username, String password) {
         try {
             User user = userDAO.findByUsername(username.trim());
@@ -100,7 +118,15 @@ public class AuthService {
                 return null;
             }
 
-            if (!"ACTIVE".equalsIgnoreCase(user.status()) && !"APPROVED".equalsIgnoreCase(user.status())) {
+            if (!"ACTIVE".equalsIgnoreCase(user.status())
+                    && !"APPROVED".equalsIgnoreCase(user.status())) {
+
+                logActivity(
+                        user.userId(),
+                        "LOGIN_FAILED",
+                        "Login attempt rejected due to account status: " + user.status()
+                );
+
                 return null;
             }
 
@@ -110,15 +136,16 @@ public class AuthService {
             );
 
             if (!validPassword) {
-                userDAO.logAction(
+                logActivity(
                         user.userId(),
                         "LOGIN_FAILED",
                         "Incorrect password."
                 );
+
                 return null;
             }
 
-            userDAO.logAction(
+            logActivity(
                     user.userId(),
                     "LOGIN_SUCCESS",
                     "User logged in successfully."
@@ -132,22 +159,20 @@ public class AuthService {
         }
     }
 
+    // USER LOGOUT
     public void logout(User user) {
         if (user == null) {
             return;
         }
 
-        try {
-            userDAO.logAction(
-                    user.userId(),
-                    "LOGOUT",
-                    "User logged out."
-            );
-        } catch (SQLException e) {
-            System.out.println("Unable to record logout.");
-        }
+        logActivity(
+                user.userId(),
+                "LOGOUT",
+                "User logged out."
+        );
     }
 
+    // INITIAL ADMIN SETUP
     public String setupInitialAdmin(
             String schoolId,
             String fullName,
@@ -191,7 +216,7 @@ public class AuthService {
                 User admin = userDAO.findByUsername(username);
 
                 if (admin != null) {
-                    userDAO.logAction(
+                    logActivity(
                             admin.userId(),
                             "ADMIN_SETUP",
                             "Initial administrator account created."
@@ -209,16 +234,19 @@ public class AuthService {
         }
     }
 
-    public java.util.List<User> getPendingUsers() {
+    // RETRIEVE PENDING USERS
+    public List<User> getPendingUsers() {
         try {
             return userDAO.getPendingUsers();
         } catch (Exception e) {
             System.out.println("Error loading pending accounts: " + e.getMessage());
-            return new java.util.ArrayList<>();
+            return new ArrayList<>();
         }
     }
 
+    // APPROVE USER ACCOUNT
     public boolean approveAccount(int userId, User admin) {
+
         if (admin == null || !"ADMIN".equalsIgnoreCase(admin.role())) {
             return false;
         }
@@ -227,10 +255,11 @@ public class AuthService {
             boolean approved = userDAO.approveUser(userId);
 
             if (approved) {
-                userDAO.logAction(
+                logActivity(
                         admin.userId(),
-                        "ACCOUNT_APPROVED",
-                        "Approved account with user ID: " + userId
+                        "USER_APPROVED",
+                        "Admin [" + admin.userId()
+                                + "] approved account for User ID " + userId
                 );
             }
 
@@ -238,6 +267,41 @@ public class AuthService {
 
         } catch (Exception e) {
             System.out.println("Error approving account: " + e.getMessage());
+            return false;
+        }
+    }
+    public boolean updateUserRoleAndStatus(
+            int targetId,
+            String newRole,
+            String newStatus,
+            User admin
+    ) {
+        if (admin == null || !"ADMIN".equalsIgnoreCase(admin.role())) {
+            System.out.println("Access denied. Admin only.");
+            return false;
+        }
+
+        try {
+            boolean updated = userDAO.updateUserRoleAndStatus(
+                    targetId,
+                    newRole,
+                    newStatus
+            );
+
+            if (updated) {
+                logActivity(
+                        admin.userId(),
+                        "USER_UPDATED",
+                        "Updated user ID " + targetId
+                                + " | Role: " + newRole
+                                + " | Status: " + newStatus
+                );
+            }
+
+            return updated;
+
+        } catch (java.sql.SQLException e) {
+            System.out.println("Error updating user: " + e.getMessage());
             return false;
         }
     }
